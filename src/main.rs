@@ -10,15 +10,12 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
+
 use ratatui::{
-    prelude::Color,
-    prelude::Rect,
-    prelude::Marker,
-    prelude::Frame,
-    prelude::Terminal,
-    prelude::CrosstermBackend,
-    widgets::{canvas::*, *},
+    prelude::{Color, CrosstermBackend, Frame, Marker, Terminal, Style}, widgets::{canvas::*, *}, text::Line as TextLine
 };
+
+use rand::prelude::*;
 
 fn main() -> io::Result<()> {
     App::run()
@@ -29,7 +26,7 @@ struct Enemy {
     x: f64,
     y: f64,
     vx: f64,
-    vy: f64
+    // vy: f64
 }
 
 impl Enemy {
@@ -73,7 +70,8 @@ struct App {
     marker: Marker,
     ground: Line,
     enemies: Vec<Enemy>,
-    collision_exists: bool
+    game_over: bool,
+    score: usize
 }
 
 impl App {
@@ -101,32 +99,20 @@ impl App {
             enemies: vec![
                 Enemy {
                     hitbox: Rectangle {
-                        x: 80.0,
+                        x: 210.0,
                         y: 24.0,
                         width: 2.0,
                         height: 0.0,
                         color: Color::Red,
                     },
-                    x: 80.0, 
+                    x: 210.0, 
                     y: 24.0,
-                    vx: 0.0,
-                    vy: 0.0
-                },
-                Enemy {
-                    hitbox: Rectangle {
-                        x: 120.0,
-                        y: 24.0,
-                        width: 2.0,
-                        height: 0.0,
-                        color: Color::Red,
-                    },
-                    x: 80.0, 
-                    y: 24.0,
-                    vx: 0.0,
-                    vy: 0.0
+                    vx: 1.0,
+                    // vy: 0.0
                 },
             ],
-            collision_exists: false
+            game_over: false,
+            score: 0
         }
     }
 
@@ -145,9 +131,11 @@ impl App {
                     match key.code {
                         KeyCode::Char('q') => break,
                         KeyCode::Up | KeyCode::Char('w') => {
-                            if app.on_ground {
-                                app.pvy = 3.0;
-                                app.on_ground = false
+                            if !app.game_over {
+                                if app.on_ground {
+                                    app.pvy = 3.0;
+                                    app.on_ground = false
+                                }
                             }
                         },
                         _ => {}
@@ -164,7 +152,36 @@ impl App {
     }
 
     fn on_tick(&mut self) {
+
+        if self.game_over {
+            return
+        }
+
         self.tick_count += 1;
+
+        if self.tick_count % 40 == 0 {
+
+            let mut rng = rand::thread_rng();
+            let rand_float: f64 = rng.gen();
+
+            if rand_float > 0.6 {
+
+
+
+                self.enemies.push(Enemy { 
+                    hitbox: Rectangle {
+                        x: 210.0,
+                        y: 24.0,
+                        width: 2.0,
+                        height: 0.0,
+                        color: Color::Red,
+                    }, 
+                    x: 210.0, 
+                    y: 24.0, 
+                    vx: 1.0 
+                })
+            }
+        }
 
         if self.py < 24.0 {
             self.py = 24.0;
@@ -173,19 +190,34 @@ impl App {
         }
 
         if !self.on_ground {
-            self.pvy -= 0.1;
+            self.pvy -= 0.15;
         }
 
         // Handle player collision
 
-        for enemy in &self.enemies {
-            if enemy.collided_with(&self.player) {
-                println!("COLLIDED")
-                self.collision_exists = true;
+        let mut keep: Vec<bool> = vec![];
 
-                // render a label with 'ded' 
+        for enemy in &mut self.enemies {
+            if enemy.collided_with(&self.player) {
+                self.game_over = true;
+            } else {
+                enemy.x -= enemy.vx;
+            }
+
+            enemy.hitbox.x = enemy.x;
+
+            if enemy.x < 0.0 {
+                keep.push(false);
+                self.score += 1;
+            } else {
+                keep.push(true);
             }
         }
+
+        // below, plus keep line defines a way of choosing which elements in 
+        // vector we are going to keep, flagging the others for deletion.
+        let mut iter = keep.iter();
+        self.enemies.retain(|_| *iter.next().unwrap());
 
         self.py = self.py + self.pvy;
         self.player.y = self.py;
@@ -203,6 +235,23 @@ impl App {
             .paint(|ctx| {
                 ctx.draw(&self.player);
                 ctx.draw(&self.ground);
+
+
+                let info_text: TextLine;
+                if self.game_over {
+                    let contents: &str = "you die";
+                    info_text = TextLine::raw(contents);
+                } else {
+                    let enemies_len: usize = self.enemies.len();
+                    let contents_string: String = format!("Existing Enemies: {}", enemies_len).to_string();
+                    info_text = TextLine::raw(contents_string);
+                }
+                ctx.print(40.0,40.0, info_text);
+                
+
+                let score_string: String = format!("Score: {}", self.score).to_string();
+                let score_text: TextLine = TextLine::raw(score_string);
+                ctx.print(180.0,100.0, score_text);
 
                 for enemy in &self.enemies {
                     ctx.draw(&enemy.hitbox)
