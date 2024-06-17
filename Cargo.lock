@@ -11,6 +11,7 @@ dependencies = [
  "gimli",
 ]
 
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

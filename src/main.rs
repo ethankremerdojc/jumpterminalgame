@@ -26,6 +26,9 @@ fn main() -> io::Result<()> {
 
 struct App {
     player: Rectangle,
+    on_ground: bool,
+    px: f64,
+    py: f64,
     pvx: f64,
     pvy: f64,
     tick_count: u64,
@@ -38,9 +41,9 @@ impl App {
         Self {
             player: Rectangle {
                 x: 20.0,
-                y: 0.0,
+                y: 24.0,
                 width: 2.0,
-                height: 2.0,
+                height: 0.0,
                 color: Color::Green,
             },
             ground: Line {
@@ -50,8 +53,11 @@ impl App {
                 y2: 20.0,
                 color: Color::White,
             },
-            pvx: 1.0,
-            pvy: 1.0,
+            on_ground: true,
+            pvx: 0.0,
+            pvy: 0.0,
+            px: 20.0,
+            py: 24.0,
             tick_count: 0,
             marker: Marker::Block,
         }
@@ -70,7 +76,12 @@ impl App {
                 if let Event::Key(key) = event::read()? {
                     match key.code {
                         KeyCode::Char('q') => break,
-                        // KeyCode::Down | KeyCode::Char('j') => app.y += 1.0,
+                        KeyCode::Down | KeyCode::Char('w') => {
+                            if app.on_ground {
+                                app.pvy = 3.0;
+                                app.on_ground = false
+                            }
+                        }
                         // KeyCode::Up | KeyCode::Char('k') => app.y -= 1.0,
                         // KeyCode::Right | KeyCode::Char('l') => app.x += 1.0,
                         // KeyCode::Left | KeyCode::Char('h') => app.x -= 1.0,
@@ -90,13 +101,26 @@ impl App {
     fn on_tick(&mut self) {
         self.tick_count += 1;
 
-        if self.tick_count % 110 == 0 {
-            self.pvx = -self.pvx;
-            self.pvy = -self.pvy;
+        if self.py < 24.0 {
+            self.py = 24.0;
+            self.on_ground = true;
+            self.pvy = 0.0;
         }
 
-        self.player.x += self.pvx;
-        self.player.y += self.pvy;
+        if !self.on_ground {
+            self.pvy -= 0.1;
+        }
+
+        self.py = self.py + self.pvy;
+        self.player.y = self.py;
+
+        // if self.tick_count % 110 == 0 {
+        //     self.pvx = -self.pvx;
+        //     self.pvy = -self.pvy;
+        // }
+
+        // self.player.x += self.pvx;
+        // self.player.y += self.pvy;
     }
 
     fn ui(&self, frame: &mut Frame) {
