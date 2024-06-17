@@ -80,7 +80,8 @@ struct App {
     ground: Line,
     enemies: Vec<Enemy>,
     game_over: bool,
-    score: usize
+    score: usize,
+    enemy_speed: f64
 }
 
 impl App {
@@ -122,7 +123,8 @@ impl App {
                 },
             ],
             game_over: false,
-            score: 0
+            score: 0,
+            enemy_speed: 1.0
         }
     }
 
@@ -143,7 +145,7 @@ impl App {
                         KeyCode::Up | KeyCode::Char('w') => {
                             if !app.game_over {
                                 if app.on_ground {
-                                    app.pvy = 3.0;
+                                    app.pvy = 2.8;
                                     app.on_ground = false
                                 }
                             }
@@ -174,7 +176,7 @@ impl App {
             let mut rng = rand::thread_rng();
             let rand_float: f64 = rng.gen();
 
-            if rand_float > 0.85 {
+            if rand_float > 0.9 / self.enemy_speed {
 
                 let new_height = Enemy::get_height();
 
@@ -199,6 +201,11 @@ impl App {
             }
         }
 
+        if self.tick_count % 100 == 0 {
+            self.enemy_speed += 0.03;
+            self.score += 1;
+        }
+
         if self.py < 24.0 {
             self.py = 24.0;
             self.on_ground = true;
@@ -206,7 +213,7 @@ impl App {
         }
 
         if !self.on_ground {
-            self.pvy -= 0.1;
+            self.pvy -= 0.09;
         }
 
         let mut keep: Vec<bool> = vec![];
@@ -215,7 +222,7 @@ impl App {
             if enemy.collided_with(&self.player) {
                 self.game_over = true;
             } else {
-                enemy.x -= enemy.vx;
+                enemy.x -= enemy.vx * self.enemy_speed;
             }
 
             enemy.hitbox.x = enemy.x;
@@ -262,10 +269,11 @@ impl App {
                 }
                 ctx.print(40.0,40.0, info_text);
                 
+                let rounded_speed = (self.enemy_speed * 100.0).round() / 100.0;
 
-                let score_string: String = format!("Score: {}", self.score).to_string();
+                let score_string: String = format!("Score: {}, Speed: {}", self.score, rounded_speed).to_string();
                 let score_text: TextLine = TextLine::raw(score_string);
-                ctx.print(180.0,100.0, score_text);
+                ctx.print(160.0,100.0, score_text);
 
                 for enemy in &self.enemies {
                     ctx.draw(&enemy.hitbox)
