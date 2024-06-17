@@ -106,22 +106,7 @@ impl App {
             py: 24.0,
             tick_count: 0,
             marker: Marker::Block,
-            enemies: vec![
-                Enemy {
-                    hitbox: Rectangle {
-                        x: 210.0,
-                        y: 24.0,
-                        width: 2.0,
-                        height: 0.0,
-                        color: Color::Red,
-                    },
-                    x: 210.0, 
-                    y: 24.0,
-                    vx: 1.0,
-                    height: 1.0
-                    // vy: 0.0
-                },
-            ],
+            enemies: vec![],
             game_over: false,
             score: 0,
             enemy_speed: 1.0
@@ -148,6 +133,11 @@ impl App {
                                     app.pvy = 2.8;
                                     app.on_ground = false
                                 }
+                            }
+                        },
+                        KeyCode::Char('r') => {
+                            if app.game_over {
+                                app = Self::new()
                             }
                         },
                         _ => {}
@@ -188,7 +178,7 @@ impl App {
                     hitbox: Rectangle {
                         x: 210.0,
                         y: 24.0,
-                        width: 2.0,
+                        width: 4.0,
                         height: new_height,
                         color: *random_color.unwrap(),
                     }, 
@@ -254,20 +244,18 @@ impl App {
             .block(Block::bordered().title(" Jump Boi "))
             .marker(self.marker)
             .paint(|ctx| {
-                ctx.draw(&self.player);
-                ctx.draw(&self.ground);
+
 
 
                 let info_text: TextLine;
                 if self.game_over {
-                    let contents: &str = "you die";
+                    let contents: &str = "Ded. (r to reset, q to quit)";
                     info_text = TextLine::raw(contents);
                 } else {
-                    let enemies_len: usize = self.enemies.len();
-                    let contents_string: String = format!("Existing Enemies: {}", enemies_len).to_string();
+                    let contents_string: String = "".to_string();
                     info_text = TextLine::raw(contents_string);
                 }
-                ctx.print(40.0,40.0, info_text);
+                ctx.print(40.0,80.0, info_text);
                 
                 let rounded_speed = (self.enemy_speed * 100.0).round() / 100.0;
 
@@ -278,6 +266,8 @@ impl App {
                 for enemy in &self.enemies {
                     ctx.draw(&enemy.hitbox)
                 }
+                ctx.draw(&self.player);
+                ctx.draw(&self.ground);
             })
             .x_bounds([0.0, 210.0])
             .y_bounds([0.0, 110.0])
