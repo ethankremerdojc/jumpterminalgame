@@ -12,10 +12,11 @@ use crossterm::{
 };
 
 use ratatui::{
-    prelude::{Color, CrosstermBackend, Frame, Marker, Terminal, Style}, widgets::{canvas::*, *}, text::Line as TextLine
+    prelude::{Color, CrosstermBackend, Frame, Marker, Terminal}, widgets::{canvas::*, *}, text::Line as TextLine
 };
 
 use rand::prelude::*;
+use rand::seq::SliceRandom;
 
 fn main() -> io::Result<()> {
     App::run()
@@ -177,19 +178,24 @@ impl App {
 
                 let new_height = Enemy::get_height();
 
+                let pylon_colors: Vec<Color> = vec![Color::Red, Color::Yellow, Color::Blue];
+
+                let random_color: Option<&Color> = pylon_colors.choose(&mut rand::thread_rng());
+                
                 self.enemies.push(Enemy { 
                     hitbox: Rectangle {
                         x: 210.0,
                         y: 24.0,
                         width: 2.0,
                         height: new_height,
-                        color: Color::Red,
+                        color: *random_color.unwrap(),
                     }, 
                     x: 210.0, 
                     y: 24.0, 
                     vx: 1.0,
                     height: new_height
-                })
+                    })
+
             }
         }
 
