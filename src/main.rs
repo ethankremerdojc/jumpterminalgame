@@ -26,12 +26,11 @@ struct Enemy {
     x: f64,
     y: f64,
     vx: f64,
-    // vy: f64
+    height: f64
 }
 
 impl Enemy {
     fn collided_with(&self, player: &Rectangle) -> bool {
-
         /*
 
             Player: (y: 20, x: 10)
@@ -50,14 +49,23 @@ impl Enemy {
         let xdiff = player.x - self.x;
         let ydiff = player.y - self.y;
 
-        if -2.0 < xdiff && xdiff < 2.0 {
-            if -2.0 < ydiff && ydiff < 2.0 {
+        if -3.0 < xdiff && xdiff < 3.0 {
+            if -2.0 < ydiff && ydiff < 2.0 + self.height { // - self.height might not make sense
                 return true
             }
         }
 
         false
 
+    }
+
+    pub fn get_height() -> f64 {
+        let mut rng = rand::thread_rng();
+        let rand_float: f64 = rng.gen();
+
+        let max: f64 = 24.0;
+        let result_hard: f64 = max * rand_float;
+        result_hard.round()
     }
 }
 
@@ -108,6 +116,7 @@ impl App {
                     x: 210.0, 
                     y: 24.0,
                     vx: 1.0,
+                    height: 1.0
                     // vy: 0.0
                 },
             ],
@@ -159,26 +168,27 @@ impl App {
 
         self.tick_count += 1;
 
-        if self.tick_count % 40 == 0 {
+        if self.tick_count % 15 == 0 {
 
             let mut rng = rand::thread_rng();
             let rand_float: f64 = rng.gen();
 
-            if rand_float > 0.6 {
+            if rand_float > 0.85 {
 
-
+                let new_height = Enemy::get_height();
 
                 self.enemies.push(Enemy { 
                     hitbox: Rectangle {
                         x: 210.0,
                         y: 24.0,
                         width: 2.0,
-                        height: 0.0,
+                        height: new_height,
                         color: Color::Red,
                     }, 
                     x: 210.0, 
                     y: 24.0, 
-                    vx: 1.0 
+                    vx: 1.0,
+                    height: new_height
                 })
             }
         }
@@ -190,10 +200,8 @@ impl App {
         }
 
         if !self.on_ground {
-            self.pvy -= 0.15;
+            self.pvy -= 0.1;
         }
-
-        // Handle player collision
 
         let mut keep: Vec<bool> = vec![];
 
